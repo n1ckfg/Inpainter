@@ -2,6 +2,11 @@
 // Diffusion from jamriska.
 // Used techniques in Jeschke et al. 09.
 
+uniform vec3 iResolution;
+uniform float iGlobalTime;
+uniform vec4 iMouse;
+uniform sampler2D tex0;
+
 // ~ ~ ~ BUFFER A ~ ~ ~ 
 /** 
  * Laplacian Solver For Image Completion
@@ -22,16 +27,15 @@ void drawGrid(vec2 coord, inout vec3 col) {
 		if (abs(coord.x - i) < 0.004) col = COLOR_GRID + coord.y / 4.0+ coord.x / 4.0;
 		if (abs(coord.y - i) < 0.004) col = COLOR_GRID + coord.y / 4.0+ coord.x / 4.0;
 	}
-	if( abs(coord.x) < 0.006 ) col = COLOR_AXES;
-	if( abs(coord.y) < 0.007 ) col = COLOR_AXES;	
+
+	if(abs(coord.x) < 0.006) col = COLOR_AXES;
+	if(abs(coord.y) < 0.007) col = COLOR_AXES;	
 }
 
-void mainImage( out vec4 fragColor, in vec2 fragCoord )
-{
+void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     fragColor = texture(iChannel0, fragCoord.xy / iResolution.xy); 
     // render the first frame
-    if (iFrame < 5)
-    {
+    if (iFrame < 5) {
         // set this pixel unknown
         fragColor = vec4(vec3(-1.0), 1);
         // return the image with holes
@@ -59,8 +63,7 @@ float tap(sampler2D tex,vec2 coord) { return texture(tex, coord / iResolution.xy
 #define LAST_RESOLUTION texture(iChannel1, vec2(0.5,0.5) / iResolution.xy).yz
 #define FRAME_RESET texture(iChannel1, vec2(1.5,0.5) / iResolution.xy).y
 
-void mainImage( out vec4 fragColor, in vec2 fragCoord )
-{
+void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     float x = fragCoord.x;
     float y = fragCoord.y;  
     
@@ -73,16 +76,13 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     float r = pow(2.0, float(LEVEL_OF_PYRAMID - 1));
     // get the minimum value from buffer B
     // init d = 0.0;
-    for (int i = 0; i < LEVEL_OF_PYRAMID; i++)
-    {          
-        d = min(d, B(x - r, y    ) + r);
-        d = min(d, B(x + r, y    ) + r);
+    for (int i = 0; i < LEVEL_OF_PYRAMID; i++) {          
+        d = min(d, B(x - r, y   ) + r);
+        d = min(d, B(x + r, y   ) + r);
         d = min(d, B(x    , y - r) + r);
         d = min(d, B(x    , y + r) + r);
         r = r / 2.0;
-    }
-    
-        
+    }     
 
     fragColor = vec4(vec3(d), 1.0);
 }
@@ -96,8 +96,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 
 vec3 tap(sampler2D tex,vec2 xy) { return texture(tex,xy/iResolution.xy).xyz; }
 
-void mainImage( out vec4 fragColor, in vec2 fragCoord )
-{
+void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     float x = fragCoord.x, y = fragCoord.y;
     
     vec3 a = A(x,y);
@@ -110,13 +109,13 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     float r = min(B(x,y), mix(512.0, 1.0, clamp(max(float(iFrame) / 64.0 - 1.0,0.0), 0.0, 1.0)));
 
 #ifdef GAMMA_CORRECTION
-    vec3 c = pow((pow(C(x - r, y  ), vec3(2.2)) +
-                  pow(C(x + r, y  ), vec3(2.2)) +
+    vec3 c = pow((pow(C(x - r, y ), vec3(2.2)) +
+                  pow(C(x + r, y ), vec3(2.2)) +
                   pow(C(x    , y-r), vec3(2.2)) +
                   pow(C(x    , y+r), vec3(2.2))) / 4.0, vec3(1.0 / 2.2));
 #else  
-    vec3 c = (C(x - r, y  ) +
-              C(x + r, y  ) +
+    vec3 c = (C(x - r, y ) +
+              C(x + r, y ) +
               C(x    , y-r) +
               C(x    , y+r)) / 4.0;
 #endif
@@ -136,12 +135,15 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
  * To be simplified, there is no support for resizing the rendering buffer.
  */
 
-void mainImage( out vec4 fragColor, in vec2 fragCoord )
-{
+void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     vec2 uv = fragCoord.xy / iResolution.xy;
     if (iMouse.z > 0.0) {
         fragColor = texture(iChannel0, uv); 
     } else {
     	fragColor = texture(iChannel2, uv);
     }
+}
+
+void main() {
+    mainImage(gl_FragColor, gl_FragCoord.xy);
 }
