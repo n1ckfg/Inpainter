@@ -16,7 +16,7 @@ uniform sampler2D tex0;
  */
 
 // buffer A holds the original image
-void bufferA(out vec4 fragColor, in vec2 fragCoord) {
+vec4 bufferA(vec4 fragColor, vec2 fragCoord) {
     fragColor = texture(iChannel0, fragCoord.xy / iResolution.xy); 
     // render the first frame
     if (iFrame < 5) {
@@ -26,6 +26,7 @@ void bufferA(out vec4 fragColor, in vec2 fragCoord) {
         vec3 col = texture(iChannel3, fragCoord.xy/iResolution.xy).xyz;
         if (length(col) > 0.5) fragColor = vec4(texture(iChannel2, fragCoord.xy/iResolution.xy).xyz, 1.0); 
     }
+    return fragColor;
 }
 
 // ~ ~ ~ BUFFER B ~ ~ ~ 
@@ -33,11 +34,7 @@ void bufferA(out vec4 fragColor, in vec2 fragCoord) {
 const int LEVEL_OF_PYRAMID = 4;
 
 // short cut for texturing
-#define A(X,Y) (tap(iChannel0,vec2(X,Y)))
-#define B(X,Y) (tap(iChannel1,vec2(X,Y)))
-float tap(sampler2D tex,vec2 coord) { return texture(tex, coord / iResolution.xy).x; }
-
-void bufferB(out vec4 fragColor, in vec2 fragCoord) {
+vec4 bufferB(vec4 fragColor, vec2 fragCoord) {
     float x = fragCoord.x;
     float y = fragCoord.y;  
     
@@ -59,18 +56,12 @@ void bufferB(out vec4 fragColor, in vec2 fragCoord) {
     }     
 
     fragColor = vec4(vec3(d), 1.0);
+    return fragColor;
 }
 
 // ~ ~ ~ BUFFER C ~ ~ ~ 
 // short cut for texturing
-#define GAMMA_CORRECTION
-#define A(X,Y) (tap(iChannel0,vec2(X,Y)))
-#define B(X,Y) (tap(iChannel1,vec2(X,Y)).x)
-#define C(X,Y) (tap(iChannel2,vec2(X,Y)))
-
-vec3 tap(sampler2D tex,vec2 xy) { return texture(tex,xy/iResolution.xy).xyz; }
-
-void bufferC(out vec4 fragColor, in vec2 fragCoord) {
+vec4 bufferC(vec4 fragColor, vec2 fragCoord) {
     float x = fragCoord.x, y = fragCoord.y;
     
     vec3 a = A(x,y);
@@ -82,19 +73,20 @@ void bufferC(out vec4 fragColor, in vec2 fragCoord) {
         
     float r = min(B(x,y), mix(512.0, 1.0, clamp(max(float(iFrame) / 64.0 - 1.0,0.0), 0.0, 1.0)));
 
-#ifdef GAMMA_CORRECTION
+    /*
+    // gamma correction
     vec3 c = pow((pow(C(x - r, y ), vec3(2.2)) +
                   pow(C(x + r, y ), vec3(2.2)) +
                   pow(C(x    , y-r), vec3(2.2)) +
                   pow(C(x    , y+r), vec3(2.2))) / 4.0, vec3(1.0 / 2.2));
-#else  
+    */
     vec3 c = (C(x - r, y ) +
               C(x + r, y ) +
               C(x    , y-r) +
               C(x    , y+r)) / 4.0;
-#endif
     
     fragColor = vec4(c, 1);
+    return fragColor;
 }
 
 // ~ ~ ~ IMAGE ~ ~ ~ 
