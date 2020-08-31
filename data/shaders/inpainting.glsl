@@ -6,6 +6,7 @@ uniform vec3 iResolution;
 uniform float iGlobalTime;
 uniform vec4 iMouse;
 uniform sampler2D tex0;
+uniform int iFrame;
 
 // ~ ~ ~ BUFFER A ~ ~ ~ 
 /** 
@@ -103,11 +104,8 @@ vec4 bufferC(vec4 fragColor, vec2 fragCoord) {
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     vec2 uv = fragCoord.xy / iResolution.xy;
-    if (iMouse.z > 0.0) {
-        fragColor = texture(iChannel0, uv); 
-    } else {
-    	fragColor = texture(iChannel2, uv);
-    }
+    vec4 col = texture2D(tex0, uv);
+    fragColor = bufferC(col, uv);
 }
 
 void main() {

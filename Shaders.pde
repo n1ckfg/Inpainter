@@ -9,6 +9,7 @@ void setupShaders() {
 }
 
 void updateShaders() {
+  shaderSetFrame(shader_inpainting);
   shaderSetMouse(shader_inpainting);
   //shaderSetTime(shader);
   shaderSetTexture(shader_inpainting, "tex0", img);
@@ -56,4 +57,8 @@ void shaderMouseReleased() {
 
 void shaderSetTexture(PShader ps, String name, PImage tex) {
   ps.set(name, tex);
+}
+
+void shaderSetFrame(PShader ps) {
+  ps.set("iFrame", frameCount);
 }
