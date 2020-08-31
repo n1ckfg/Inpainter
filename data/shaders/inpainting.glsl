@@ -16,23 +16,7 @@ uniform sampler2D tex0;
  */
 
 // buffer A holds the original image
-//#define TEST_GRID
-
-void drawGrid(vec2 coord, inout vec3 col) {
-    const vec3 COLOR_AXES = vec3(0.698, 0.8745, 0.541);
-    const vec3 COLOR_GRID = vec3(1.0, 1.0, 0.702);
-    const float tickWidth = 0.1;
-    
-    for (float i = -2.0; i < 2.0; i += tickWidth) {
-		if (abs(coord.x - i) < 0.004) col = COLOR_GRID + coord.y / 4.0+ coord.x / 4.0;
-		if (abs(coord.y - i) < 0.004) col = COLOR_GRID + coord.y / 4.0+ coord.x / 4.0;
-	}
-
-	if(abs(coord.x) < 0.006) col = COLOR_AXES;
-	if(abs(coord.y) < 0.007) col = COLOR_AXES;	
-}
-
-void mainImage(out vec4 fragColor, in vec2 fragCoord) {
+void bufferA(out vec4 fragColor, in vec2 fragCoord) {
     fragColor = texture(iChannel0, fragCoord.xy / iResolution.xy); 
     // render the first frame
     if (iFrame < 5) {
@@ -41,12 +25,6 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         // return the image with holes
         vec3 col = texture(iChannel3, fragCoord.xy/iResolution.xy).xyz;
         if (length(col) > 0.5) fragColor = vec4(texture(iChannel2, fragCoord.xy/iResolution.xy).xyz, 1.0); 
-#ifdef TEST_GRID
-        col = vec3(0.0); 
-        vec2 coord = 2.0 * (fragCoord.xy - 0.5 * iResolution.xy) / iResolution.y;
-        drawGrid(coord, col); 
-        if (length(col) > 0.0) fragColor = vec4(col, 1.0); else fragColor = vec4(-1.0); 
-#endif
     }
 }
 
@@ -59,11 +37,7 @@ const int LEVEL_OF_PYRAMID = 4;
 #define B(X,Y) (tap(iChannel1,vec2(X,Y)))
 float tap(sampler2D tex,vec2 coord) { return texture(tex, coord / iResolution.xy).x; }
 
-
-#define LAST_RESOLUTION texture(iChannel1, vec2(0.5,0.5) / iResolution.xy).yz
-#define FRAME_RESET texture(iChannel1, vec2(1.5,0.5) / iResolution.xy).y
-
-void mainImage(out vec4 fragColor, in vec2 fragCoord) {
+void bufferB(out vec4 fragColor, in vec2 fragCoord) {
     float x = fragCoord.x;
     float y = fragCoord.y;  
     
@@ -96,7 +70,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
 
 vec3 tap(sampler2D tex,vec2 xy) { return texture(tex,xy/iResolution.xy).xyz; }
 
-void mainImage(out vec4 fragColor, in vec2 fragCoord) {
+void bufferC(out vec4 fragColor, in vec2 fragCoord) {
     float x = fragCoord.x, y = fragCoord.y;
     
     vec3 a = A(x,y);
