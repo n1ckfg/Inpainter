@@ -8,7 +8,26 @@ uniform vec4 iMouse;
 uniform sampler2D tex0;
 uniform int iFrame;
 
+const int LEVEL_OF_PYRAMID = 4;
+
+vec3 tap(sampler2D tex, vec2 xy) { 
+	return texture2D(tex, xy / iResolution.xy).xyz; 
+}
+
+vec3 A(X,Y) {
+	tap(iChannel0, vec2(X,Y));
+}
+
+vec3 B(X,Y) {
+	tap(iChannel1, vec2(X,Y)).x;
+}
+
+vec3 C(X,Y) {
+	tap(iChannel2, vec2(X,Y));
+}
+
 // ~ ~ ~ BUFFER A ~ ~ ~ 
+// Holds the original image
 /** 
  * Laplacian Solver For Image Completion
  * Forked from [url=https://www.shadertoy.com/view/XdKGDW]jamriska[/url].
@@ -16,23 +35,21 @@ uniform int iFrame;
  * To be simplified, I removed the support for resizing the rendering buffer.
  */
 
-// buffer A holds the original image
 vec4 bufferA(vec4 fragColor, vec2 fragCoord) {
-    fragColor = texture(iChannel0, fragCoord.xy / iResolution.xy); 
+    fragColor = texture2D(iChannel0, fragCoord.xy / iResolution.xy); 
     // render the first frame
     if (iFrame < 5) {
         // set this pixel unknown
         fragColor = vec4(vec3(-1.0), 1);
         // return the image with holes
-        vec3 col = texture(iChannel3, fragCoord.xy/iResolution.xy).xyz;
+        vec3 col = texture2D(iChannel3, fragCoord.xy/iResolution.xy).xyz;
         if (length(col) > 0.5) fragColor = vec4(texture(iChannel2, fragCoord.xy/iResolution.xy).xyz, 1.0); 
     }
     return fragColor;
 }
 
 // ~ ~ ~ BUFFER B ~ ~ ~ 
-// buffer B stores the distance map of the curves along with an intial guess of the solution
-const int LEVEL_OF_PYRAMID = 4;
+// Stores the distance map of the curves along with an intial guess of the solution
 
 // short cut for texturing
 vec4 bufferB(vec4 fragColor, vec2 fragCoord) {
@@ -46,6 +63,7 @@ vec4 bufferB(vec4 fragColor, vec2 fragCoord) {
         
     float d = 100000.0;
     float r = pow(2.0, float(LEVEL_OF_PYRAMID - 1));
+    
     // get the minimum value from buffer B
     // init d = 0.0;
     for (int i = 0; i < LEVEL_OF_PYRAMID; i++) {          
@@ -81,10 +99,7 @@ vec4 bufferC(vec4 fragColor, vec2 fragCoord) {
                   pow(C(x    , y-r), vec3(2.2)) +
                   pow(C(x    , y+r), vec3(2.2))) / 4.0, vec3(1.0 / 2.2));
     */
-    vec3 c = (C(x - r, y ) +
-              C(x + r, y ) +
-              C(x    , y-r) +
-              C(x    , y+r)) / 4.0;
+    vec3 c = (C(x - r, y ) + C(x + r, y ) + C(x, y-r) + C(x, y+r)) / 4.0;
     
     fragColor = vec4(c, 1);
     return fragColor;
